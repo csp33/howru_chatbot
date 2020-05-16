@@ -126,7 +126,7 @@ class ConfigHandler(object):
         PendingQuestionJob(context, self.patient.identifier)
         logger.debug(f'User {self.user.username} id {self.user.id} changed schedule to {self.patient.schedule}')
         update.message.reply_text(messages[self.patient.language]['schedule_updated'])
-        return self.config_menu(update, context)
+        return ConversationHandler.END
 
     def process_delete_user(self, update, context):
         logger.info(f'User {self.user.username} id {self.user.id} deleted his account.')

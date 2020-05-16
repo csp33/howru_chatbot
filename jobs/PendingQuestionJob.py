@@ -21,12 +21,13 @@ class PendingQuestionJob(object):
     def job_callback(self, context):
         pending_questions = self._get_pending_questions()
         for task in pending_questions:
-            question = Question(identifier=task['question_id'], load_from_db=True)
-            self.pending_db.update_document(task['_id'], {'$set': {'answering': True}})
-            context.bot.send_message(chat_id=self.patient.identifier, text=question.text,
-                                     reply_markup=keyboards.get_custom_keyboard(question.responses))
-            while not self.is_question_answered(task):
-                time.sleep(0.5)
+            if not self.is_question_answered(task):
+                question = Question(identifier=task['question_id'], load_from_db=True)
+                self.pending_db.update_document(task['_id'], {'$set': {'answering': True}})
+                context.bot.send_message(chat_id=self.patient.identifier, text=question.text,
+                                         reply_markup=keyboards.get_custom_keyboard(question.responses))
+                while not self.is_question_answered(task):
+                    time.sleep(0.5)
         message = messages[self.patient.language]['finish_answering'] if self.answered_questions_today() else \
             messages[self.patient.language]['no_questions']
         logger.info(f'User {self.patient.username} id {self.patient.identifier} answered all the questions')
