@@ -1,0 +1,6 @@
+[submodule "howru_models"]
+	path = howru_models
+	url = https://github.com/csp98/howru_models
+[submodule "howru_helpers"]
+	path = howru_helpers
+	url = https://github.com/csp98/howru_helpers
