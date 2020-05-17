@@ -31,7 +31,7 @@ messages = {
         "deleted_user": "Usuario eliminado. Pulsa el botón de abajo para volver a registrarte.",
         "finish_answering": "Esas son todas las preguntas por hoy. Gracias!"
     },
-    "EN": {
+    "GB": {
         "choose_gender": "Please choose your gender:",
         "choose_pic": "Please send a photo of yourself or send /skip if you don\'t want to.",
         "choose_schedule": "Please specify the time when you would like to receive questions in HH:MM format (24h).",

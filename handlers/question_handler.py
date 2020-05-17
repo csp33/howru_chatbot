@@ -5,6 +5,7 @@ from telegram.ext import ConversationHandler, MessageHandler, Filters
 
 from howru_models.models import AnsweredQuestion, PendingQuestion
 from log.logger import logger
+import pytz
 
 ANSWERING, ANSWERED = range(2)
 
@@ -29,7 +30,8 @@ class QuestionHandler(object):
         """
         # Create answered question entry
         answered_question = AnsweredQuestion(patient_id_id=user.id, doctor_id=question_task.doctor_id,
-                                             answer_date=datetime.utcnow(), response=response,
+                                             answer_date=datetime.now(pytz.timezone('Europe/Madrid')),
+                                             response=response,
                                              question_id=question_task.question_id)
         answered_question.save()
         # Set answering to false

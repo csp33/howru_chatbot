@@ -11,7 +11,7 @@ def get_custom_keyboard(values, max_column=2):
 
 gender_keyboard = {
     'ES': ReplyKeyboardMarkup([['Masculino', 'Femenino', 'Otro']]),
-    'EN': ReplyKeyboardMarkup([['Male', 'Female', 'Other']])
+    'GB': ReplyKeyboardMarkup([['Male', 'Female', 'Other']])
 }
 language_keyboard = ReplyKeyboardMarkup([[flag('es'), flag('gb')]])
 delete_user_keyboard = {
@@ -19,7 +19,7 @@ delete_user_keyboard = {
         ['Sí, eliminar mi usuario']
     ]
     ),
-    'EN': ReplyKeyboardMarkup(
+    'GB': ReplyKeyboardMarkup(
         [
             ['Yes, delete my user']
         ]
@@ -34,7 +34,7 @@ config_keyboard = {
         ["Borrar usuario️"]
     ]
     ),
-    'EN': ReplyKeyboardMarkup(
+    'GB': ReplyKeyboardMarkup(
         [
             ['Change profile picture', 'Change name'],
             ["Change gender", 'Change language'],
