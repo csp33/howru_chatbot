@@ -51,6 +51,7 @@ class ConfigHandler(object):
         pic_name = f'pics/{self.user.id}.jpg'
         photo_file.download(pic_name)
         self.patient.picture = pic_name
+        self.patient.save(())
         logger.debug(f'User {self.user.username} id {self.user.id} changed profile picture')
         update.message.reply_text(messages[self.patient.language]['picture_updated'],
                                   reply_markup=ReplyKeyboardRemove())
@@ -66,6 +67,7 @@ class ConfigHandler(object):
         old_name = self.patient.name
         name = update.message.text
         self.patient.name = name
+        self.patient.save(())
         logger.debug(f'User {self.user.username} old  name {old_name} id {self.user.id} changed name to {name}')
         update.message.reply_text(messages[self.patient.language]['name_updated'])
         return self.config_menu(update, context)
@@ -80,6 +82,7 @@ class ConfigHandler(object):
     def process_gender(self, update, context):
         gender = update.message.text
         self.patient.gender = gender
+        self.patient.save(())
         logger.debug(f'User {self.user.username} id {self.user.id} changed gender to {gender}')
         update.message.reply_text(messages[self.patient.language]['gender_updated'])
         return self.config_menu(update, context)
@@ -93,6 +96,7 @@ class ConfigHandler(object):
 
     def process_language(self, update, context):
         self.patient.language = update.message.text
+        self.patient.save(())
         logger.debug(f'User {self.user.username} id {self.user.id} changed language to {self.patient.language}')
         update.message.reply_text(messages[self.patient.language]['language_updated'])
         return self.config_menu(update, context)
@@ -122,6 +126,7 @@ class ConfigHandler(object):
 
     def process_change_schedule(self, update, context):
         self.patient.schedule = update.message.text
+        self.patient.save(())
         for old_job in context.job_queue.get_jobs_by_name(f'{self.user.id}_pending_questions_job'):
             old_job.schedule_removal()
         PendingQuestionJob(context, self.patient.identifier)
@@ -131,7 +136,7 @@ class ConfigHandler(object):
 
     def process_delete_user(self, update, context):
         logger.info(f'User {self.user.username} id {self.user.id} deleted his account.')
-        self.patient.delete_from_db()
+        self.patient.delete()
         update.message.reply_text(messages[self.patient.language]['deleted_user'],
                                   reply_markup=keyboards.start_keyboard)
         return ConversationHandler.END

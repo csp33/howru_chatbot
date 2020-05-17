@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from telegram import ReplyKeyboardRemove
 
 from config.messages import messages
-from howru_helpers.MongoHelper import MongoHelper
 from log.logger import logger
 import manage
 import keyboards
@@ -23,9 +22,9 @@ class PendingQuestionJob(object):
         pending_questions = self._get_pending_questions()
         for task in pending_questions:
             if not self.is_question_answered(task):
-                question = Question.objects.get(identifier=task.question_id)
-                question.answering = True
-                question.save()
+                question = task.question_id
+                task.answering = True
+                task.save()
                 context.bot.send_message(chat_id=self.patient.identifier, text=question.text,
                                          reply_markup=keyboards.get_custom_keyboard(question.responses))
                 while not self.is_question_answered(task):

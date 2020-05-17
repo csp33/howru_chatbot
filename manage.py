@@ -3,14 +3,14 @@ import sys
 
 import django
 
-DATABASES = {
+DATABASES =  {
     'default': {
-        'ENGINE': 'djongo',
-        'NAME': 'howru',
-        'CLIENT': {
-            'host': "mongo-dbs",
-            'port': 27017
-        }
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': 'postgres',
+        'HOST': 'db',
+        'PORT': 5432,
     }
 }
 INSTALLED_APPS = [

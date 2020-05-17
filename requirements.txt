@@ -1,7 +1,7 @@
 python-telegram-bot
 ujson
 pytz
-django==2.*
-sqlparse==0.2.4
-djongo
+django
+psycopg2
 Pillow
+django_better_admin_arrayfield
