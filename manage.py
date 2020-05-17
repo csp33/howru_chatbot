@@ -6,7 +6,7 @@ import django
 DATABASES = {
     'default': {
         'ENGINE': 'djongo',
-        'NAME': 'web_interface',
+        'NAME': 'howru',
         'CLIENT': {
             'host': "mongo-dbs",
             'port': 27017
