@@ -1,4 +1,7 @@
 python-telegram-bot
-pymongo
 ujson
 pytz
+django==2.*
+sqlparse==0.2.4
+djongo
+Pillow

@@ -5,8 +5,9 @@ from config.messages import messages
 from howru_helpers import UTCTime
 from jobs.PendingQuestionJob import PendingQuestionJob
 from log.logger import logger
-from howru_models import keyboards
-from howru_models.Users.Patient import Patient
+import keyboards
+import manage
+from howru_models.models import Patient
 
 PROCESS_PROFILE_PIC, PROCESS_NAME, PROCESS_GENDER, CHOOSING, PROCESS_LANGUAGE, PROCESS_DELETE_USER, PROCESS_SCHEDULE = \
     range(7)
@@ -26,7 +27,7 @@ class ConfigHandler(object):
         self.user = update.message.from_user
         logger.debug(f'User {self.user.username} id {self.user.id} started the configurator')
         try:
-            self.patient = Patient(identifier=self.user.id, load_from_db=True)
+            self.patient = Patient.objects.get(identifier=self.user.id)
         except Exception:
             logger.debug(
                 f'User {self.user.username} id {self.user.id} tried to start the configurator but was not registered')

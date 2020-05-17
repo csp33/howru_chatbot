@@ -6,24 +6,26 @@ from telegram import ReplyKeyboardRemove
 from config.messages import messages
 from howru_helpers.MongoHelper import MongoHelper
 from log.logger import logger
-from howru_models import keyboards
-from howru_models.Question import Question
-from howru_models.Users.Patient import Patient
+import manage
+import keyboards
+from howru_models.models import *
 
 
 class PendingQuestionJob(object):
     def __init__(self, context, patient_id):
-        self.pending_db = MongoHelper(db='journal', collection='pending_questions')
-        self.answered_db = MongoHelper(db='journal', collection='answered_questions')
-        self.patient = Patient(identifier=patient_id, load_from_db=True)
+        try:
+            self.patient = Patient.objects.get(identifier=patient_id)
+        except:
+            logger.exception("Patient %s does not exist in DB", patient_id)
         self._create_job(context)
 
     def job_callback(self, context):
         pending_questions = self._get_pending_questions()
         for task in pending_questions:
             if not self.is_question_answered(task):
-                question = Question(identifier=task['question_id'], load_from_db=True)
-                self.pending_db.update_document(task['_id'], {'$set': {'answering': True}})
+                question = Question.objects.get(identifier=task.question_id)
+                question.answering = True
+                question.save()
                 context.bot.send_message(chat_id=self.patient.identifier, text=question.text,
                                          reply_markup=keyboards.get_custom_keyboard(question.responses))
                 while not self.is_question_answered(task):
@@ -44,25 +46,17 @@ class PendingQuestionJob(object):
         now = datetime.now()
         today = datetime(now.year, now.month, now.day)
         tomorrow = today + timedelta(days=1)
-        return self.answered_db.count_documents(
-            {
-                'question_id': question_task['question_id'],
-                'patient_id': self.patient.identifier,
-                'answer_date': {'$gte': today, '$lt': tomorrow}
-            })
+        return AnsweredQuestion.objects.filter(question_id=question_task.question_id,
+                                               patient_id = question_task.patient_id,
+                                               answer_date__gt=today,
+                                               answer_date__lt=tomorrow)
 
     def _get_pending_questions(self):
-        # TODO return objects instead of dicts...
-        return self.pending_db.search({
-            'patient_id': self.patient.identifier
-        })
+        return PendingQuestion.objects.filter(patient_id=self.patient.identifier)
 
     def answered_questions_today(self):
         now = datetime.now()
         today = datetime(now.year, now.month, now.day)
         tomorrow = today + timedelta(days=1)
-        return self.answered_db.count_documents(
-            {
-                'patient_id': self.patient.identifier,
-                'answer_date': {'$gte': today, '$lt': tomorrow}
-            })
+        return AnsweredQuestion.objects.filter(answer_date__gt=today,
+                                               answer_date__lt=tomorrow)
