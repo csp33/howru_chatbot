@@ -1,3 +1,7 @@
+import base64
+import os
+from base64 import b64encode
+
 from telegram import ReplyKeyboardRemove, ParseMode
 from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters
 
@@ -39,10 +43,12 @@ class ConfigHandler(object):
 
     def ask_profile_pic(self, update, context):
         # Send current picture
-        picture_path = self.patient.picture
         update.message.reply_text(messages[self.patient.language]['current_picture'],
                                   reply_markup=ReplyKeyboardRemove())
-        update.message.reply_photo(open(picture_path, 'rb'))
+        with open('current_pic.png', 'wb') as output:
+            output.write(base64.b64decode(self.patient.picture))
+        update.message.reply_photo(open('current_pic.png', 'rb'))
+        os.remove('current_pic.png')
         update.message.reply_text(messages[self.patient.language]['change_picture'], reply_markup=ReplyKeyboardRemove())
         return PROCESS_PROFILE_PIC
 
