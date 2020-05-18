@@ -6,7 +6,7 @@ from telegram import ReplyKeyboardRemove, ParseMode
 from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters
 
 from config.messages import messages
-from howru_helpers import UTCTime
+from howru_helpers import UTCTime, Flag
 from jobs.PendingQuestionJob import PendingQuestionJob
 from log.logger import logger
 import keyboards
@@ -101,8 +101,8 @@ class ConfigHandler(object):
         return PROCESS_LANGUAGE
 
     def process_language(self, update, context):
-        self.patient.language = update.message.text
-        self.patient.save(())
+        self.patient.language = Flag.unflag(update.message.text)
+        self.patient.save()
         logger.debug(f'User {self.user.username} id {self.user.id} changed language to {self.patient.language}')
         update.message.reply_text(messages[self.patient.language]['language_updated'])
         return self.config_menu(update, context)
@@ -178,7 +178,7 @@ config_handler = ConversationHandler(
             MessageHandler(Filters.regex('^(Male|Female|Other|Masculino|Femenino|Otro)$'), instance.process_gender)],
         PROCESS_PROFILE_PIC: [MessageHandler(Filters.photo, instance.process_profile_pic)],
         PROCESS_NAME: [MessageHandler(Filters.text, instance.process_name)],
-        PROCESS_LANGUAGE: [MessageHandler(Filters.regex(f'^({keyboards.flag("es")}|{keyboards.flag("gb")})$'),
+        PROCESS_LANGUAGE: [MessageHandler(Filters.regex(f'^({Flag.flag("es")}|{Flag.flag("gb")})$'),
                                           instance.process_language)],
         PROCESS_DELETE_USER: [MessageHandler(Filters.regex(f'^(Sí, eliminar mi usuario|Yes, delete my user)$'),
                                              instance.process_delete_user)],
