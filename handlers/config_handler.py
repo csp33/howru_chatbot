@@ -3,7 +3,7 @@ import os
 from base64 import b64encode
 
 from telegram import ReplyKeyboardRemove, ParseMode
-from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters
+from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters, run_async
 
 from config.messages import messages
 from howru_helpers import UTCTime, Flag
@@ -17,174 +17,211 @@ PROCESS_PROFILE_PIC, PROCESS_NAME, PROCESS_GENDER, CHOOSING, PROCESS_LANGUAGE, P
     range(7)
 
 
-class ConfigHandler(object):
-    def __init__(self):
-        self.patient = Patient()
+def config_menu(update, context):
+    patient = context.user_data['patient']
+    context.bot.send_message(chat_id=update.message.from_user.id,
+                             text=messages[patient.language]['select_config'],
+                             reply_markup=keyboards.config_keyboard[patient.language])
+    return CHOOSING
 
-    def config_menu(self, update, context):
-        context.bot.send_message(chat_id=self.user.id,
-                                 text=messages[self.patient.language]['select_config'],
-                                 reply_markup=keyboards.config_keyboard[self.patient.language])
-        return CHOOSING
 
-    def config(self, update, context):
-        self.user = update.message.from_user
-        logger.debug(f'User {self.user.username} id {self.user.id} started the configurator')
-        try:
-            self.patient = Patient.objects.get(identifier=self.user.id)
-        except Exception:
-            logger.debug(
-                f'User {self.user.username} id {self.user.id} tried to start the configurator but was not registered')
-            update.message.reply_text('You must register first by clicking /start\n'
-                                      'Debes registrarte primero pulsando /start.',
-                                      reply_markup=ReplyKeyboardRemove())
-            return ConversationHandler.END
-        return self.config_menu(update, context)
-
-    def ask_profile_pic(self, update, context):
-        # Send current picture
-        update.message.reply_text(messages[self.patient.language]['current_picture'],
-                                  reply_markup=ReplyKeyboardRemove())
-        with open('current_pic.png', 'wb') as output:
-            output.write(base64.b64decode(self.patient.picture))
-        update.message.reply_photo(open('current_pic.png', 'rb'))
-        os.remove('current_pic.png')
-        update.message.reply_text(messages[self.patient.language]['change_picture'], reply_markup=ReplyKeyboardRemove())
-        return PROCESS_PROFILE_PIC
-
-    def process_profile_pic(self, update, context):
-        photo_file = update.message.photo[-1].get_file()
-        pic_name = f'pics/{self.user.id}.jpg'
-        photo_file.download(pic_name)
-        self.patient.picture = pic_name
-        self.patient.save(())
-        logger.debug(f'User {self.user.username} id {self.user.id} changed profile picture')
-        update.message.reply_text(messages[self.patient.language]['picture_updated'],
-                                  reply_markup=ReplyKeyboardRemove())
-        return self.config_menu(update, context)
-
-    def ask_change_name(self, update, context):
-        logger.debug(f'User {self.user.username} id {self.user.id} asked to change name')
-        update.message.reply_text(messages[self.patient.language]['current_name'] + self.patient.name)
-        update.message.reply_text(messages[self.patient.language]['change_name'], reply_markup=ReplyKeyboardRemove())
-        return PROCESS_NAME
-
-    def process_name(self, update, context):
-        old_name = self.patient.name
-        name = update.message.text
-        self.patient.name = name
-        self.patient.save(())
-        logger.debug(f'User {self.user.username} old  name {old_name} id {self.user.id} changed name to {name}')
-        update.message.reply_text(messages[self.patient.language]['name_updated'])
-        return self.config_menu(update, context)
-
-    def ask_change_gender(self, update, context):
-        logger.debug(f'User {self.user.username} id {self.user.id} asked to change gender')
-        update.message.reply_text(messages[self.patient.language]['current_gender'] + self.patient.gender)
-        update.message.reply_text(messages[self.patient.language]['change_gender'],
-                                  reply_markup=keyboards.gender_keyboard[self.patient.language])
-        return PROCESS_GENDER
-
-    def process_gender(self, update, context):
-        gender = update.message.text
-        self.patient.gender = gender
-        self.patient.save(())
-        logger.debug(f'User {self.user.username} id {self.user.id} changed gender to {gender}')
-        update.message.reply_text(messages[self.patient.language]['gender_updated'])
-        return self.config_menu(update, context)
-
-    def ask_change_language(self, update, context):
-        logger.debug(f'User {self.user.username} id {self.user.id} asked to change language')
-        update.message.reply_text(messages[self.patient.language]['current_language'] + self.patient.language)
-        update.message.reply_text(messages[self.patient.language]['change_language'],
-                                  reply_markup=keyboards.language_keyboard)
-        return PROCESS_LANGUAGE
-
-    def process_language(self, update, context):
-        self.patient.language = Flag.unflag(update.message.text)
-        self.patient.save()
-        logger.debug(f'User {self.user.username} id {self.user.id} changed language to {self.patient.language}')
-        update.message.reply_text(messages[self.patient.language]['language_updated'])
-        return self.config_menu(update, context)
-
-    def view_profile(self, update, context):
-        message = messages[self.patient.language]['show_profile'].format(self.patient.name, self.patient.gender,
-                                                                         self.patient.language,
-                                                                         self.patient.schedule.strftime('%H:%M'))
-        update.message.reply_text(message, parse_mode=ParseMode.HTML)
-        return self.config_menu(update, context)
-
-    def ask_delete_user(self, update, context):
-        logger.debug(f'User {self.user.username} id {self.user.id} wants to delete his account.')
-        update.message.reply_text(messages[self.patient.language]['delete_user'],
-                                  reply_markup=keyboards.delete_user_keyboard[self.patient.language])
-        return PROCESS_DELETE_USER
-
-    def ask_change_schedule(self, update, context):
-        logger.debug(f'User {self.user.username} id {self.user.id} asked to change schedule')
-        schedule_dt = UTCTime.to_locale(self.patient.schedule)
-        schedule = schedule_dt.strftime("%H:%M")
-        update.message.reply_text(
-            messages[self.patient.language]['current_schedule'] + schedule)
-        update.message.reply_text(messages[self.patient.language]['change_schedule'],
-                                  reply_markup=ReplyKeyboardRemove())
-        return PROCESS_SCHEDULE
-
-    def process_change_schedule(self, update, context):
-        self.patient.schedule = update.message.text
-        self.patient.save(())
-        for old_job in context.job_queue.get_jobs_by_name(f'{self.user.id}_pending_questions_job'):
-            old_job.schedule_removal()
-        PendingQuestionJob(context, self.patient.identifier)
-        logger.debug(f'User {self.user.username} id {self.user.id} changed schedule to {self.patient.schedule}')
-        update.message.reply_text(messages[self.patient.language]['schedule_updated'])
-        return ConversationHandler.END
-
-    def process_delete_user(self, update, context):
-        logger.info(f'User {self.user.username} id {self.user.id} deleted his account.')
-        self.patient.delete()
-        update.message.reply_text(messages[self.patient.language]['deleted_user'],
-                                  reply_markup=keyboards.start_keyboard)
-        return ConversationHandler.END
-
-    def cancel(self, update, context):
-        logger.debug(f'User {self.user.username} id {self.user.id} cancelled current operation.')
-        return self.config_menu(update, context)
-
-    def _exit(self, update, context):
-        logger.debug(f'User {self.user.username} id {self.user.id} close the configurator.')
-        update.message.reply_text(messages[self.patient.language]['exit_configurator'],
+def config(update, context):
+    context.user_data['patient'] = Patient.objects.get(identifier=update.message.from_user.id)
+    logger.info(f'User {update.message.from_user.username} id {update.message.from_user.id} started the configurator')
+    try:
+        context.user_data['patient'] = Patient.objects.get(identifier=update.message.from_user.id)
+    except Exception:
+        logger.info(
+            f'User {update.message.from_user.username} id {update.message.from_user.id} tried to start the configurator but was not registered')
+        update.message.reply_text('You must register first by clicking /start\n'
+                                  'Debes registrarte primero pulsando /start.',
                                   reply_markup=ReplyKeyboardRemove())
         return ConversationHandler.END
+    return config_menu(update, context)
 
 
-instance = ConfigHandler()
+def ask_profile_pic(update, context):
+    patient = context.user_data['patient']
+    # Send current picture
+    update.message.reply_text(messages[patient.language]['current_picture'],
+                              reply_markup=ReplyKeyboardRemove())
+    with open('current_pic.png', 'wb') as output:
+        output.write(base64.b64decode(patient.picture))
+    update.message.reply_photo(open('current_pic.png', 'rb'))
+    os.remove('current_pic.png')
+    update.message.reply_text(messages[patient.language]['change_picture'], reply_markup=ReplyKeyboardRemove())
+    return PROCESS_PROFILE_PIC
+
+
+@run_async
+def process_profile_pic(update, context):
+    patient = context.user_data['patient']
+    photo_file = update.message.photo[-1].get_file()
+    pic_name = f'pics/{update.message.from_user.id}.jpg'
+    photo_file.download(pic_name)
+    patient.picture = pic_name
+    patient.save()
+    logger.info(f'User {update.message.from_user.username} id {update.message.from_user.id} changed profile picture')
+    update.message.reply_text(messages[patient.language]['picture_updated'],
+                              reply_markup=ReplyKeyboardRemove())
+    return config_menu(update, context)
+
+
+def ask_change_name(update, context):
+    patient = context.user_data['patient']
+    logger.info(f'User {update.message.from_user.username} id {update.message.from_user.id} asked to change name')
+    update.message.reply_text(messages[patient.language]['current_name'] + patient.name)
+    update.message.reply_text(messages[patient.language]['change_name'], reply_markup=ReplyKeyboardRemove())
+    return PROCESS_NAME
+
+
+@run_async
+def process_name(update, context):
+    patient = context.user_data['patient']
+    old_name = patient.name
+    name = update.message.text
+    patient.name = name
+    patient.save(())
+    logger.info(
+        f'User {update.message.from_user.username} old  name {old_name} id {update.message.from_user.id} changed name to {name}')
+    update.message.reply_text(messages[patient.language]['name_updated'])
+    return config_menu(update, context)
+
+
+def ask_change_gender(update, context):
+    patient = context.user_data['patient']
+    logger.info(f'User {update.message.from_user.username} id {update.message.from_user.id} asked to change gender')
+    update.message.reply_text(messages[patient.language]['current_gender'] + patient.gender)
+    update.message.reply_text(messages[patient.language]['change_gender'],
+                              reply_markup=keyboards.gender_keyboard[patient.language])
+    return PROCESS_GENDER
+
+
+@run_async
+def process_gender(update, context):
+    patient = context.user_data['patient']
+    gender = update.message.text
+    patient.gender = gender
+    patient.save(())
+    logger.info(f'User {update.message.from_user.username} id {update.message.from_user.id} changed gender to {gender}')
+    update.message.reply_text(messages[patient.language]['gender_updated'])
+    return config_menu(update, context)
+
+
+def ask_change_language(update, context):
+    patient = context.user_data['patient']
+    logger.info(f'User {update.message.from_user.username} id {update.message.from_user.id} asked to change language')
+    update.message.reply_text(messages[patient.language]['current_language'] + patient.language)
+    update.message.reply_text(messages[patient.language]['change_language'],
+                              reply_markup=keyboards.language_keyboard)
+    return PROCESS_LANGUAGE
+
+
+@run_async
+def process_language(update, context):
+    patient = context.user_data['patient']
+    patient.language = Flag.unflag(update.message.text)
+    patient.save()
+    logger.info(
+        f'User {update.message.from_user.username} id {update.message.from_user.id} changed language to {patient.language}')
+    update.message.reply_text(messages[patient.language]['language_updated'])
+    return config_menu(update, context)
+
+
+def view_profile(update, context):
+    patient = context.user_data['patient']
+    message = messages[patient.language]['show_profile'].format(patient.name, patient.gender,
+                                                                patient.language,
+                                                                patient.schedule.strftime('%H:%M'))
+    update.message.reply_text(message, parse_mode=ParseMode.HTML)
+    return config_menu(update, context)
+
+
+def ask_delete_user(update, context):
+    patient = context.user_data['patient']
+    logger.info(
+        f'User {update.message.from_user.username} id {update.message.from_user.id} wants to delete his account.')
+    update.message.reply_text(messages[patient.language]['delete_user'],
+                              reply_markup=keyboards.delete_user_keyboard[patient.language])
+    return PROCESS_DELETE_USER
+
+
+def ask_change_schedule(update, context):
+    patient = context.user_data['patient']
+    logger.info(f'User {update.message.from_user.username} id {update.message.from_user.id} asked to change schedule')
+    schedule_dt = UTCTime.to_locale(patient.schedule)
+    schedule = schedule_dt.strftime("%H:%M")
+    update.message.reply_text(
+        messages[patient.language]['current_schedule'] + schedule)
+    update.message.reply_text(messages[patient.language]['change_schedule'],
+                              reply_markup=ReplyKeyboardRemove())
+    return PROCESS_SCHEDULE
+
+
+@run_async
+def process_change_schedule(update, context):
+    patient = context.user_data['patient']
+    patient.schedule = update.message.text
+    patient.save(())
+    for old_job in context.job_queue.get_jobs_by_name(f'{update.message.from_user.id}_pending_questions_job'):
+        old_job.schedule_removal()
+    PendingQuestionJob(context, patient.identifier)
+    logger.info(
+        f'User {update.message.from_user.username} id {update.message.from_user.id} changed schedule to {patient.schedule}')
+    update.message.reply_text(messages[patient.language]['schedule_updated'])
+    return ConversationHandler.END
+
+
+@run_async
+def process_delete_user(update, context):
+    patient = context.user_data['patient']
+    logger.info(f'User {update.message.from_user.username} id {update.message.from_user.id} deleted his account.')
+    patient.delete()
+    update.message.reply_text(messages[patient.language]['deleted_user'],
+                              reply_markup=keyboards.start_keyboard)
+    return ConversationHandler.END
+
+
+def cancel(update, context):
+    logger.info(
+        f'User {update.message.from_user.username} id {update.message.from_user.id} cancelled current operation.')
+    return config_menu(update, context)
+
+
+def _exit(update, context):
+    patient = context.user_data['patient']
+    logger.info(f'User {update.message.from_user.username} id {update.message.from_user.id} close the configurator.')
+    update.message.reply_text(messages[patient.language]['exit_configurator'],
+                              reply_markup=ReplyKeyboardRemove())
+    return ConversationHandler.END
+
+
 config_handler = ConversationHandler(
-    entry_points=[CommandHandler('config', instance.config)],
+    entry_points=[CommandHandler('config', config)],
     states={
         CHOOSING: [MessageHandler(Filters.regex('^(Cambiar imagen de perfil|Change profile picture)$'),
-                                  instance.ask_profile_pic),
-                   MessageHandler(Filters.regex('^(Cambiar nombre|Change name)$'), instance.ask_change_name),
-                   MessageHandler(Filters.regex('^(Cambiar género|Change gender)$'), instance.ask_change_gender),
+                                  ask_profile_pic),
+                   MessageHandler(Filters.regex('^(Cambiar nombre|Change name)$'), ask_change_name),
+                   MessageHandler(Filters.regex('^(Cambiar género|Change gender)$'), ask_change_gender),
                    MessageHandler(Filters.regex(f'^(Cambiar idioma|Change language)$'),
-                                  instance.ask_change_language),
+                                  ask_change_language),
                    MessageHandler(Filters.regex(f'^(Ver mi perfil|View my profile)$'),
-                                  instance.view_profile),
+                                  view_profile),
                    MessageHandler(Filters.regex(f'^(Borrar usuario️|Remove user️)$'),
-                                  instance.ask_delete_user),
-                   MessageHandler(Filters.regex('^(Cambiar horario|Change schedule)$'), instance.ask_change_schedule)
+                                  ask_delete_user),
+                   MessageHandler(Filters.regex('^(Cambiar horario|Change schedule)$'), ask_change_schedule)
                    ],
         PROCESS_GENDER: [
-            MessageHandler(Filters.regex('^(Male|Female|Other|Masculino|Femenino|Otro)$'), instance.process_gender)],
-        PROCESS_PROFILE_PIC: [MessageHandler(Filters.photo, instance.process_profile_pic)],
-        PROCESS_NAME: [MessageHandler(Filters.text, instance.process_name)],
+            MessageHandler(Filters.regex('^(Male|Female|Other|Masculino|Femenino|Otro)$'), process_gender)],
+        PROCESS_PROFILE_PIC: [MessageHandler(Filters.photo, process_profile_pic)],
+        PROCESS_NAME: [MessageHandler(Filters.text, process_name)],
         PROCESS_LANGUAGE: [MessageHandler(Filters.regex(f'^({Flag.flag("es")}|{Flag.flag("gb")})$'),
-                                          instance.process_language)],
+                                          process_language)],
         PROCESS_DELETE_USER: [MessageHandler(Filters.regex(f'^(Sí, eliminar mi usuario|Yes, delete my user)$'),
-                                             instance.process_delete_user)],
+                                             process_delete_user)],
         PROCESS_SCHEDULE: [MessageHandler(Filters.regex('^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'),
-                                          instance.process_change_schedule)]
+                                          process_change_schedule)]
     },
-    fallbacks=[CommandHandler('cancel', instance.cancel),
-               CommandHandler('exit', instance._exit)]
+    fallbacks=[CommandHandler('cancel', cancel),
+               CommandHandler('exit', _exit)]
 )
