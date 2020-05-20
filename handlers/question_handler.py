@@ -10,14 +10,6 @@ import pytz
 
 ANSWERING, ANSWERED = range(2)
 
-def finish_all_conversations(update, context):
-    all_hand = context.dispatcher.handlers
-    for dict_group in all_hand:
-        for handler in all_hand[dict_group]:
-            logger.error(handler.__dict__)
-            if isinstance(handler, ConversationHandler):
-                handler.update_state(ConversationHandler.END, handler._get_key(update))
-
 
 def answer_question(update, context):
     user = update.message.from_user
@@ -30,9 +22,7 @@ def answer_question(update, context):
             f'User {user.username} id {user.id} wrote {response} while there was no question to answer')
         update.message.reply_text("Unrecognized command\nComando no reconocido", reply_markup=ReplyKeyboardRemove())
         return ConversationHandler.END
-    logger.info(
-        f'User {user.username} id {user.id} answered {response} to question {question_task.question_id} '
-        f'task {question_task.id}')
+    logger.info(f'User {user.username} id {user.id} answered "{response}" to question "{question_task.question_id}"')
     # Create answered question entry
     answered_question = AnsweredQuestion(patient_id_id=user.id, doctor_id=question_task.doctor_id,
                                          answer_date=datetime.now(pytz.timezone('Europe/Madrid')),
@@ -42,8 +32,6 @@ def answer_question(update, context):
     # Set answering to false
     question_task.answering = False
     question_task.save()
-    # Close configurator
-    finish_all_conversations(update, context)
 
     return ConversationHandler.END
 

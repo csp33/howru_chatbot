@@ -2,6 +2,7 @@ import time
 from datetime import datetime, timedelta
 
 from telegram import ReplyKeyboardRemove
+from telegram.ext import ConversationHandler
 
 from config.messages import messages
 from log.logger import logger
@@ -9,6 +10,13 @@ import manage
 import keyboards
 from howru_models.models import *
 
+def was_configurator_running(patient_id, context):
+    all_hand = context.dispatcher.handlers
+    for dict_group in all_hand:
+        for handler in all_hand[dict_group]:
+            if isinstance(handler, ConversationHandler) and handler.name=="configurator" and str(list(handler.conversations)[0][0]) == patient_id:
+                return True
+    return False
 
 class PendingQuestionJob(object):
     def __init__(self, context, patient_id):
@@ -32,8 +40,13 @@ class PendingQuestionJob(object):
         message = messages[self.patient.language]['finish_answering'] if self.answered_questions_today() else \
             messages[self.patient.language]['no_questions']
         logger.info(f'User {self.patient.username} id {self.patient.identifier} answered all the questions')
-        context.bot.send_message(chat_id=self.patient.identifier, text=message,
-                                 reply_markup=ReplyKeyboardRemove())
+        context.bot.send_message(chat_id=self.patient.identifier, text=message, reply_markup=ReplyKeyboardRemove())
+        time.sleep(0.1)
+        if was_configurator_running(self.patient.identifier, context):
+            logger.info(f'Reopening configurator for user {self.patient.username} id {self.patient.identifier}')
+            context.bot.send_message(chat_id=self.patient.identifier,
+                                     text=messages[self.patient.language]['select_config'],
+                                     reply_markup=keyboards.config_keyboard[self.patient.language])
 
     def _create_job(self, context):
         context.job_queue.run_daily(callback=self.job_callback,

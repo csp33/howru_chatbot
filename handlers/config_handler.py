@@ -1,6 +1,6 @@
 import base64
 import os
-from base64 import b64encode
+from datetime import datetime
 
 from telegram import ReplyKeyboardRemove, ParseMode
 from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters, run_async
@@ -162,7 +162,10 @@ def ask_change_schedule(update, context):
 @run_async
 def process_change_schedule(update, context):
     patient = context.user_data['patient']
-    patient.schedule = update.message.text
+    old_schedule = patient.schedule
+    new_schedule = update.message.text
+    new_schedule_dt = UTCTime.get_utc_result(new_schedule)
+    patient.schedule = new_schedule
     patient.save(())
     for old_job in context.job_queue.get_jobs_by_name(f'{update.message.from_user.id}_pending_questions_job'):
         old_job.schedule_removal()
@@ -170,7 +173,13 @@ def process_change_schedule(update, context):
     logger.info(
         f'User {update.message.from_user.username} id {update.message.from_user.id} changed schedule to {patient.schedule}')
     update.message.reply_text(messages[patient.language]['schedule_updated'])
-    return ConversationHandler.END
+    now = datetime.utcnow()
+    # If the time is less than the actual time, question job will start (it will show config menu when patient finishes
+    # answering). Otherwise, show config menu
+    if new_schedule_dt.time() > now.time():
+        return config_menu(update, context)
+    else:
+        return CHOOSING
 
 
 @run_async
