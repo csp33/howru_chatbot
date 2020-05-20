@@ -99,5 +99,6 @@ start_handler = ConversationHandler(
         PICTURE: [MessageHandler(Filters.photo, picture), CommandHandler('skip', skip_picture)],
         SCHEDULE: [MessageHandler(Filters.regex('^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'), schedule)]
     },
-    fallbacks=[]
+    fallbacks=[],
+    name="starter"
 )

@@ -6,6 +6,7 @@ from telegram import ReplyKeyboardRemove, ParseMode
 from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters, run_async
 
 from config.messages import messages
+from filters.IsAnsweringFilter import is_answering_filter
 from howru_helpers import UTCTime, Flag
 from jobs.PendingQuestionJob import PendingQuestionJob
 from log.logger import logger
@@ -214,7 +215,7 @@ config_handler = ConversationHandler(
         PROCESS_GENDER: [
             MessageHandler(Filters.regex('^(Male|Female|Other|Masculino|Femenino|Otro)$'), process_gender)],
         PROCESS_PROFILE_PIC: [MessageHandler(Filters.photo, process_profile_pic)],
-        PROCESS_NAME: [MessageHandler(Filters.text, process_name)],
+        PROCESS_NAME: [MessageHandler(~is_answering_filter & ~Filters.command, process_name)],
         PROCESS_LANGUAGE: [MessageHandler(Filters.regex(f'^({Flag.flag("es")}|{Flag.flag("gb")})$'),
                                           process_language)],
         PROCESS_DELETE_USER: [MessageHandler(Filters.regex(f'^(Sí, eliminar mi usuario|Yes, delete my user)$'),
@@ -223,5 +224,6 @@ config_handler = ConversationHandler(
                                           process_change_schedule)]
     },
     fallbacks=[CommandHandler('cancel', cancel),
-               CommandHandler('exit', _exit)]
+               CommandHandler('exit', _exit)],
+    name="configurator"
 )

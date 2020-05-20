@@ -3,11 +3,20 @@ from datetime import datetime
 from telegram import ReplyKeyboardRemove
 from telegram.ext import ConversationHandler, MessageHandler, Filters
 
+from filters.IsAnsweringFilter import is_answering_filter
 from howru_models.models import AnsweredQuestion, PendingQuestion
 from log.logger import logger
 import pytz
 
 ANSWERING, ANSWERED = range(2)
+
+def finish_all_conversations(update, context):
+    all_hand = context.dispatcher.handlers
+    for dict_group in all_hand:
+        for handler in all_hand[dict_group]:
+            logger.error(handler.__dict__)
+            if isinstance(handler, ConversationHandler):
+                handler.update_state(ConversationHandler.END, handler._get_key(update))
 
 
 def answer_question(update, context):
@@ -21,11 +30,9 @@ def answer_question(update, context):
             f'User {user.username} id {user.id} wrote {response} while there was no question to answer')
         update.message.reply_text("Unrecognized command\nComando no reconocido", reply_markup=ReplyKeyboardRemove())
         return ConversationHandler.END
-    """
     logger.info(
-        f'User {user.username} id {user.id} answered {response} to question {question_task.id} '
-        f'task {question_task["_id"]}')
-    """
+        f'User {user.username} id {user.id} answered {response} to question {question_task.question_id} '
+        f'task {question_task.id}')
     # Create answered question entry
     answered_question = AnsweredQuestion(patient_id_id=user.id, doctor_id=question_task.doctor_id,
                                          answer_date=datetime.now(pytz.timezone('Europe/Madrid')),
@@ -35,6 +42,8 @@ def answer_question(update, context):
     # Set answering to false
     question_task.answering = False
     question_task.save()
+    # Close configurator
+    finish_all_conversations(update, context)
 
     return ConversationHandler.END
 
@@ -44,7 +53,8 @@ def _get_pending_question_task(user_id):
 
 
 question_handler = ConversationHandler(
-    entry_points=[MessageHandler(~Filters.regex('^/...$'), answer_question)],
+    entry_points=[MessageHandler(~Filters.command & is_answering_filter, answer_question)],
     states={},
-    fallbacks=[]
+    fallbacks=[],
+    name="questions_handler"
 )
