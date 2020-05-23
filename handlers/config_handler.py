@@ -83,7 +83,7 @@ def process_name(update, context):
     old_name = patient.name
     name = update.message.text
     patient.name = name
-    patient.save(())
+    patient.save(update_fields=['name'])
     logger.info(
         f'User {update.message.from_user.username} old  name {old_name} id {update.message.from_user.id} changed name to {name}')
     update.message.reply_text(messages[patient.language]['name_updated'])
@@ -104,7 +104,7 @@ def process_gender(update, context):
     patient = context.user_data['patient']
     gender = update.message.text
     patient.gender = gender
-    patient.save(())
+    patient.save(update_fields=['_gender'])
     logger.info(f'User {update.message.from_user.username} id {update.message.from_user.id} changed gender to {gender}')
     update.message.reply_text(messages[patient.language]['gender_updated'])
     return config_menu(update, context)
@@ -123,13 +123,13 @@ def ask_change_language(update, context):
 def process_language(update, context):
     patient = context.user_data['patient']
     patient.language = Flag.unflag(update.message.text)
-    patient.save()
+    patient.save(update_fields=['language'])
     logger.info(
         f'User {update.message.from_user.username} id {update.message.from_user.id} changed language to {patient.language}')
     update.message.reply_text(messages[patient.language]['language_updated'])
     return config_menu(update, context)
 
-
+@send_typing_action
 def view_profile(update, context):
     patient = context.user_data['patient']
     message = messages[patient.language]['show_profile'].format(patient.name, patient.gender,
@@ -138,7 +138,7 @@ def view_profile(update, context):
     update.message.reply_text(message, parse_mode=ParseMode.HTML)
     return config_menu(update, context)
 
-
+@send_typing_action
 def ask_delete_user(update, context):
     patient = context.user_data['patient']
     logger.info(
@@ -147,7 +147,7 @@ def ask_delete_user(update, context):
                               reply_markup=keyboards.delete_user_keyboard[patient.language])
     return PROCESS_DELETE_USER
 
-
+@send_typing_action
 def ask_change_schedule(update, context):
     patient = context.user_data['patient']
     logger.info(f'User {update.message.from_user.username} id {update.message.from_user.id} asked to change schedule')
@@ -159,15 +159,14 @@ def ask_change_schedule(update, context):
                               reply_markup=ReplyKeyboardRemove())
     return PROCESS_SCHEDULE
 
-
+@send_typing_action
 @run_async
 def process_change_schedule(update, context):
     patient = context.user_data['patient']
-    old_schedule = patient.schedule
     new_schedule = update.message.text
     new_schedule_dt = UTCTime.get_utc_result(new_schedule)
     patient.schedule = new_schedule
-    patient.save(())
+    patient.save(update_fields=['_schedule'])
     for old_job in context.job_queue.get_jobs_by_name(f'{update.message.from_user.id}_pending_questions_job'):
         old_job.schedule_removal()
     PendingQuestionJob(context, patient.identifier)
@@ -182,7 +181,7 @@ def process_change_schedule(update, context):
     else:
         return CHOOSING
 
-
+@send_typing_action
 @run_async
 def process_delete_user(update, context):
     patient = context.user_data['patient']
@@ -192,13 +191,13 @@ def process_delete_user(update, context):
                               reply_markup=keyboards.start_keyboard)
     return ConversationHandler.END
 
-
+@send_typing_action
 def cancel(update, context):
     logger.info(
         f'User {update.message.from_user.username} id {update.message.from_user.id} cancelled current operation.')
     return config_menu(update, context)
 
-
+@send_typing_action
 def _exit(update, context):
     patient = context.user_data['patient']
     logger.info(f'User {update.message.from_user.username} id {update.message.from_user.id} close the configurator.')
