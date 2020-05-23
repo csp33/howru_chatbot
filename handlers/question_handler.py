@@ -4,13 +4,14 @@ from telegram import ReplyKeyboardRemove
 from telegram.ext import ConversationHandler, MessageHandler, Filters
 
 from filters.IsAnsweringFilter import is_answering_filter
+from handlers import send_typing_action
 from howru_models.models import AnsweredQuestion, PendingQuestion
 from log.logger import logger
 import pytz
 
 ANSWERING, ANSWERED = range(2)
 
-
+@send_typing_action
 def answer_question(update, context):
     user = update.message.from_user
     response = update.message.text

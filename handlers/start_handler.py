@@ -2,6 +2,7 @@ from telegram import ReplyKeyboardRemove
 from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters
 
 from config.messages import messages
+from handlers import send_typing_action
 from jobs.PendingQuestionJob import PendingQuestionJob
 from log.logger import logger
 import keyboards
@@ -11,7 +12,7 @@ from howru_helpers import Flag
 
 GENDER, PICTURE, LANGUAGE, SCHEDULE = range(4)
 
-
+@send_typing_action
 def start(update, context):
     # Check that user is not registered
     try:
@@ -34,7 +35,7 @@ def start(update, context):
 
     return LANGUAGE
 
-
+@send_typing_action
 def language(update, context):
     language = update.message.text
     patient = context.user_data['patient']
@@ -44,7 +45,7 @@ def language(update, context):
                               reply_markup=keyboards.gender_keyboard[patient.language])
     return GENDER
 
-
+@send_typing_action
 def gender(update, context):
     patient = context.user_data['patient']
     logger.info(
@@ -53,7 +54,7 @@ def gender(update, context):
     patient.gender = update.message.text
     return PICTURE
 
-
+@send_typing_action
 def picture(update, context):
     patient = context.user_data['patient']
     photo_file = update.message.photo[-1].get_file()
@@ -64,7 +65,7 @@ def picture(update, context):
     patient.picture = pic_name
     return SCHEDULE
 
-
+@send_typing_action
 def skip_picture(update, context):
     patient = context.user_data['patient']
     logger.info(
@@ -73,7 +74,7 @@ def skip_picture(update, context):
     update.message.reply_text(messages[patient.language]['choose_schedule'])
     return SCHEDULE
 
-
+@send_typing_action
 def schedule(update, context):
     schedule = update.message.text
     patient = context.user_data['patient']
@@ -81,7 +82,7 @@ def schedule(update, context):
     patient.schedule = schedule
     return finish(update, context)
 
-
+@send_typing_action
 def finish(update, context):
     patient = context.user_data['patient']
     patient.save()

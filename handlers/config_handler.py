@@ -7,6 +7,7 @@ from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Fi
 
 from config.messages import messages
 from filters.IsAnsweringFilter import is_answering_filter
+from handlers import send_typing_action, send_upload_photo_action
 from howru_helpers import UTCTime, Flag
 from jobs.PendingQuestionJob import PendingQuestionJob
 from log.logger import logger
@@ -17,7 +18,7 @@ from howru_models.models import Patient
 PROCESS_PROFILE_PIC, PROCESS_NAME, PROCESS_GENDER, CHOOSING, PROCESS_LANGUAGE, PROCESS_DELETE_USER, PROCESS_SCHEDULE = \
     range(7)
 
-
+@send_typing_action
 def config_menu(update, context):
     patient = context.user_data['patient']
     context.bot.send_message(chat_id=update.message.from_user.id,
@@ -25,7 +26,7 @@ def config_menu(update, context):
                              reply_markup=keyboards.config_keyboard[patient.language])
     return CHOOSING
 
-
+@send_typing_action
 def config(update, context):
     context.user_data['patient'] = Patient.objects.get(identifier=update.message.from_user.id)
     logger.info(f'User {update.message.from_user.username} id {update.message.from_user.id} started the configurator')
@@ -40,7 +41,7 @@ def config(update, context):
         return ConversationHandler.END
     return config_menu(update, context)
 
-
+@send_upload_photo_action
 def ask_profile_pic(update, context):
     patient = context.user_data['patient']
     # Send current picture
@@ -54,7 +55,7 @@ def ask_profile_pic(update, context):
     return PROCESS_PROFILE_PIC
 
 
-@run_async
+@send_typing_action
 def process_profile_pic(update, context):
     patient = context.user_data['patient']
     photo_file = update.message.photo[-1].get_file()
@@ -67,7 +68,7 @@ def process_profile_pic(update, context):
                               reply_markup=ReplyKeyboardRemove())
     return config_menu(update, context)
 
-
+@send_typing_action
 def ask_change_name(update, context):
     patient = context.user_data['patient']
     logger.info(f'User {update.message.from_user.username} id {update.message.from_user.id} asked to change name')
@@ -76,7 +77,7 @@ def ask_change_name(update, context):
     return PROCESS_NAME
 
 
-@run_async
+@send_typing_action
 def process_name(update, context):
     patient = context.user_data['patient']
     old_name = patient.name
@@ -88,7 +89,7 @@ def process_name(update, context):
     update.message.reply_text(messages[patient.language]['name_updated'])
     return config_menu(update, context)
 
-
+@send_typing_action
 def ask_change_gender(update, context):
     patient = context.user_data['patient']
     logger.info(f'User {update.message.from_user.username} id {update.message.from_user.id} asked to change gender')
@@ -98,7 +99,7 @@ def ask_change_gender(update, context):
     return PROCESS_GENDER
 
 
-@run_async
+@send_typing_action
 def process_gender(update, context):
     patient = context.user_data['patient']
     gender = update.message.text
@@ -108,7 +109,7 @@ def process_gender(update, context):
     update.message.reply_text(messages[patient.language]['gender_updated'])
     return config_menu(update, context)
 
-
+@send_typing_action
 def ask_change_language(update, context):
     patient = context.user_data['patient']
     logger.info(f'User {update.message.from_user.username} id {update.message.from_user.id} asked to change language')
@@ -118,7 +119,7 @@ def ask_change_language(update, context):
     return PROCESS_LANGUAGE
 
 
-@run_async
+@send_typing_action
 def process_language(update, context):
     patient = context.user_data['patient']
     patient.language = Flag.unflag(update.message.text)
