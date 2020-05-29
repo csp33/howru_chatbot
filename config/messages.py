@@ -25,11 +25,11 @@ messages = {
         "current_language": "Tu idioma actual es ",
         "change_language": "Introduce tu nuevo idioma:",
         "language_updated": "Tu idioma se ha actualizado.",
-        "no_questions": "No hay preguntas para hoy. Nos vemos mañana!",
+        "no_questions": "No hay preguntas para hoy. ¡Nos vemos mañana!",
         "show_profile": "Estos son los datos de tu perfil:\n<b>Nombre</b>: {}\n<b>Género</b>: {}\n<b>Idioma</b>: {}\n<b>Horario</b>: {}",
         "delete_user": "¿Estás seguro de que deseas borrar tu usuario?\nAún puedes pulsar /cancel para volver atrás o /exit para salir de la configuración.",
         "deleted_user": "Usuario eliminado. Pulsa el botón de abajo para volver a registrarte.",
-        "finish_answering": "Esas son todas las preguntas por hoy. Gracias!"
+        "finish_answering": "Esas son todas las preguntas por hoy. ¡Gracias!"
     },
     "GB": {
         "choose_gender": "Please choose your gender:",
