@@ -7,10 +7,12 @@ from jobs.PendingQuestionJob import PendingQuestionJob
 from log.logger import logger
 import keyboards
 import manage
+from django.contrib.auth.models import User
 from howru_models.models import Patient
 from howru_helpers import Flag
 
 GENDER, PICTURE, LANGUAGE, SCHEDULE = range(4)
+
 
 @send_typing_action
 def start(update, context):
@@ -35,6 +37,7 @@ def start(update, context):
 
     return LANGUAGE
 
+
 @send_typing_action
 def language(update, context):
     language = update.message.text
@@ -45,6 +48,7 @@ def language(update, context):
                               reply_markup=keyboards.gender_keyboard[patient.language])
     return GENDER
 
+
 @send_typing_action
 def gender(update, context):
     patient = context.user_data['patient']
@@ -53,6 +57,7 @@ def gender(update, context):
     update.message.reply_text(messages[patient.language]['choose_pic'], reply_markup=ReplyKeyboardRemove())
     patient.gender = update.message.text
     return PICTURE
+
 
 @send_typing_action
 def picture(update, context):
@@ -65,6 +70,7 @@ def picture(update, context):
     patient.picture = pic_name
     return SCHEDULE
 
+
 @send_typing_action
 def skip_picture(update, context):
     patient = context.user_data['patient']
@@ -74,6 +80,7 @@ def skip_picture(update, context):
     update.message.reply_text(messages[patient.language]['choose_schedule'])
     return SCHEDULE
 
+
 @send_typing_action
 def schedule(update, context):
     schedule = update.message.text
@@ -82,10 +89,18 @@ def schedule(update, context):
     patient.schedule = schedule
     return finish(update, context)
 
+
 @send_typing_action
 def finish(update, context):
     patient = context.user_data['patient']
     patient.save()
+    # Add data analyst to all patients
+    try:
+        data_analyst = User.objects.get(username="data-analyst").doctor
+        patient.assigned_doctors.add(data_analyst)
+        patient.save()
+    except:
+        logger.exception("Exception adding patient %s to data_analyst.", patient.username)
     update.message.reply_text(messages[patient.language]['registration_ok'])
     logger.info(f'Creating pending_questions job for user {update.message.from_user.username}')
     PendingQuestionJob(context, patient.identifier)
@@ -95,7 +110,7 @@ def finish(update, context):
 start_handler = ConversationHandler(
     entry_points=[CommandHandler('start', start)],
     states={
-        LANGUAGE: [MessageHandler(Filters.regex(f'^({Flag.flag("es")}|{Flag.flag("gb")})$'),language)],
+        LANGUAGE: [MessageHandler(Filters.regex(f'^({Flag.flag("es")}|{Flag.flag("gb")})$'), language)],
         GENDER: [MessageHandler(Filters.regex('^(Male|Female|Other|Masculino|Femenino|Otro)$'), gender)],
         PICTURE: [MessageHandler(Filters.photo, picture), CommandHandler('skip', skip_picture)],
         SCHEDULE: [MessageHandler(Filters.regex('^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'), schedule)]
