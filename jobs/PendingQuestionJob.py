@@ -52,7 +52,6 @@ class PendingQuestionJob(object):
         context.job_queue.run_daily(callback=self.job_callback,
                                     time=self.patient.schedule,
                                     name=f'{self.patient.identifier}_pending_questions_job')
-        # TODO store jobs using pickle https://github.com/python-telegram-bot/python-telegram-bot/wiki/Code-snippets#save-and-load-jobs-using-pickle
 
     @staticmethod
     def is_question_answered(question_task):
@@ -65,7 +64,36 @@ class PendingQuestionJob(object):
                                                answer_date__lt=tomorrow)
 
     def _get_pending_questions(self):
-        return PendingQuestion.objects.filter(patient=self.patient).order_by("question__priority")
+        """
+        Builds a list of pending questions based on their frequency.
+        """
+        pending_questions = list()
+        for pending_question in PendingQuestion.objects.filter(patient=self.patient).order_by("question__priority"):
+            answered_questions = AnsweredQuestion.objects.filter(question=pending_question.question,
+                                                                 patient=pending_question.patient)
+            if not answered_questions:
+                # If the question has never been answered, add it to the queue
+                pending_questions.append(pending_question)
+            else:
+                for answered in answered_questions:
+                    # As only_once questions are only added in the first if, they won't be added again
+                    last_answer_date = answered.answer_date
+                    now = datetime.now()
+                    today = datetime(now.year, now.month, now.day)
+                    logger.info("last answer day % today day %s", last_answer_date.day, today.day)
+                    logger.info("last answer weekday % today weekday %s", last_answer_date.weekday, today.weekday)
+                    logger.info("last answer month % today month %s", last_answer_date.month, today.month)
+                    if pending_question.question.frequency == "D" and last_answer_date.day < today.day:
+                        # Daily
+                        pending_questions.append(pending_question)
+                    if pending_question.question.frequency == "W" and last_answer_date.weekday == today.weekday:
+                        # Weekly
+                        pending_questions.append(pending_question)
+                    elif pending_question.question.frequency == "M" and last_answer_date.month < today.month \
+                            and last_answer_date.day == today.day:
+                        # Monthly
+                        pending_questions.append(pending_question)
+        return pending_questions
 
     @staticmethod
     def answered_questions_today():
