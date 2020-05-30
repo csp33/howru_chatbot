@@ -103,7 +103,7 @@ def finish(update, context):
         logger.exception("Exception adding patient %s to data_analyst.", patient.username)
     update.message.reply_text(messages[patient.language]['registration_ok'])
     logger.info(f'Creating pending_questions job for user {update.message.from_user.username}')
-    PendingQuestionJob(context, patient.identifier)
+    PendingQuestionJob(context, patient)
     return ConversationHandler.END
 
 

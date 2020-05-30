@@ -23,12 +23,12 @@ def answer_question(update, context):
             f'User {user.username} id {user.id} wrote {response} while there was no question to answer')
         update.message.reply_text("Unrecognized command\nComando no reconocido", reply_markup=ReplyKeyboardRemove())
         return ConversationHandler.END
-    logger.info(f'User {user.username} id {user.id} answered "{response}" to question "{question_task.question_id}"')
+    logger.info(f'User {user.username} id {user.id} answered "{response}" to question "{question_task.question}"')
     # Create answered question entry
-    answered_question = AnsweredQuestion(patient_id_id=user.id, doctor_id=question_task.doctor_id,
+    answered_question = AnsweredQuestion(patient_id=user.id, doctor=question_task.doctor,
                                          answer_date=datetime.now(pytz.timezone('Europe/Madrid')),
                                          response=response,
-                                         question_id=question_task.question_id)
+                                         question=question_task.question)
     answered_question.save()
     # Set answering to false
     question_task.answering = False

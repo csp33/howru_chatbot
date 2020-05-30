@@ -85,7 +85,7 @@ def process_name(update, context):
     patient.name = name
     patient.save(update_fields=['name'])
     logger.info(
-        f'User {update.message.from_user.username} old  name {old_name} id {update.message.from_user.id} changed name to {name}')
+        f'User {update.message.from_user.username} old name {old_name} id {update.message.from_user.id} changed name to {name}')
     update.message.reply_text(messages[patient.language]['name_updated'])
     return config_menu(update, context)
 
@@ -133,7 +133,7 @@ def process_language(update, context):
 def view_profile(update, context):
     patient = context.user_data['patient']
     message = messages[patient.language]['show_profile'].format(patient.name, patient.gender,
-                                                                patient.language,
+                                                                patient.get_language_display(),
                                                                 patient.schedule.strftime('%H:%M'))
     update.message.reply_text(message, parse_mode=ParseMode.HTML)
     return config_menu(update, context)
@@ -169,7 +169,7 @@ def process_change_schedule(update, context):
     patient.save(update_fields=['_schedule'])
     for old_job in context.job_queue.get_jobs_by_name(f'{update.message.from_user.id}_pending_questions_job'):
         old_job.schedule_removal()
-    PendingQuestionJob(context, patient.identifier)
+    PendingQuestionJob(context, patient)
     logger.info(
         f'User {update.message.from_user.username} id {update.message.from_user.id} changed schedule to {patient.schedule}')
     update.message.reply_text(messages[patient.language]['schedule_updated'])
