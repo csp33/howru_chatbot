@@ -65,7 +65,7 @@ class PendingQuestionJob(object):
                                                answer_date__lt=tomorrow)
 
     def _get_pending_questions(self):
-        return PendingQuestion.objects.filter(patient=self.patient)
+        return PendingQuestion.objects.filter(patient=self.patient).order_by("question__priority")
 
     @staticmethod
     def answered_questions_today():
