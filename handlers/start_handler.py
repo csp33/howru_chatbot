@@ -16,11 +16,14 @@ GENDER, PICTURE, LANGUAGE, SCHEDULE = range(4)
 
 @send_typing_action
 def start(update, context):
+    """
+    Shows welcome message and asks for language
+    """
     # Check that user is not registered
     try:
         patient = Patient.objects.get(identifier=update.message.from_user.id)
         logger.info(
-            f'User {update.message.from_user.username} id {update.message.from_user.id} tried to register again.')
+            f'User {update.message.from_user.username} tried to register again.')
         update.message.reply_text(text=messages[patient.language]['already_exists'])
         return ConversationHandler.END
     except Patient.DoesNotExist:
@@ -29,7 +32,7 @@ def start(update, context):
                                                identifier=str(update.message.from_user.id),
                                                username=update.message.from_user.username)
 
-    logger.info(f'User {update.message.from_user.username} id {update.message.from_user.id} started a new conversation')
+    logger.info(f'User {update.message.from_user.username} started a new conversation')
     update.message.reply_text(text=f'Hi {update.message.from_user.first_name}. Welcome to HOW-R-U psychologist bot.\n'
                                    f'Hola {update.message.from_user.first_name}. Bienvenido al bot psicólogo HOW-R-U')
     update.message.reply_text(text=f'Please select a language:\nElija un idioma por favor:',
@@ -40,9 +43,12 @@ def start(update, context):
 
 @send_typing_action
 def language(update, context):
+    """
+    Processes language and asks for gender
+    """
     language = update.message.text
     patient = context.user_data['patient']
-    logger.info(f'User {update.message.from_user.username} id {update.message.from_user.id} chose language {language}')
+    logger.info(f'User {update.message.from_user.username} chose language {language}')
     context.user_data['patient'].language = Flag.unflag(language)
     update.message.reply_text(text=messages[patient.language]['choose_gender'],
                               reply_markup=keyboards.gender_keyboard[patient.language])
@@ -51,9 +57,12 @@ def language(update, context):
 
 @send_typing_action
 def gender(update, context):
+    """
+    Processes gender and asks for picture
+    """
     patient = context.user_data['patient']
     logger.info(
-        f'User {update.message.from_user.username} id {update.message.from_user.id} chose gender {update.message.text}')
+        f'User {update.message.from_user.username} chose gender {update.message.text}')
     update.message.reply_text(messages[patient.language]['choose_pic'], reply_markup=ReplyKeyboardRemove())
     patient.gender = update.message.text
     return PICTURE
@@ -61,11 +70,14 @@ def gender(update, context):
 
 @send_typing_action
 def picture(update, context):
+    """
+    Processes picture and asks for schedule
+    """
     patient = context.user_data['patient']
     photo_file = update.message.photo[-1].get_file()
     pic_name = f'pics/{update.message.from_user.id}..jpg'
     photo_file.download(pic_name)
-    logger.info(f'User {update.message.from_user.username} id {update.message.from_user.id} sent picture {pic_name}')
+    logger.info(f'User {update.message.from_user.username} sent picture {pic_name}')
     update.message.reply_text(messages[patient.language]['choose_schedule'])
     patient.picture = pic_name
     return SCHEDULE
@@ -73,9 +85,12 @@ def picture(update, context):
 
 @send_typing_action
 def skip_picture(update, context):
+    """
+    Sets default picture and asks for schedule
+    """
     patient = context.user_data['patient']
     logger.info(
-        f'User {update.message.from_user.username} id {update.message.from_user.id} did not send a picture, using default')
+        f'User {update.message.from_user.username} did not send a picture, using default')
     patient.picture = f'pics/default_profile_picture.png'
     update.message.reply_text(messages[patient.language]['choose_schedule'])
     return SCHEDULE
@@ -83,15 +98,22 @@ def skip_picture(update, context):
 
 @send_typing_action
 def schedule(update, context):
+    """
+    Processes schedule and calls finish() method
+    """
     schedule = update.message.text
     patient = context.user_data['patient']
-    logger.info(f'User {update.message.from_user.username} id {update.message.from_user.id} chose schedule {schedule}')
+    logger.info(f'User {update.message.from_user.username} chose schedule {schedule}')
     patient.schedule = schedule
     return finish(update, context)
 
 
 @send_typing_action
 def finish(update, context):
+    """
+    Saves patient in DB, assigns him/her to data_analyst, creates PendingQuestion entries for assigned_to_all questions
+    and finally creates the user's PendingQuestionJob
+    """
     patient = context.user_data['patient']
     patient.save()
     # Add data analyst to all patients and assigned_to_all questions

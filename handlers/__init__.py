@@ -6,12 +6,14 @@ from log.logger import logger
 
 
 def error_callback(update, context):
-    logger.exception(
-        f'Error {context.error} while performing update on user {update.message.from_user.username} id {update.message.from_user.id}')
+    logger.exception(f'Error {context.error} while performing update on user {update.message.from_user.username}')
 
 
 def send_action(action):
-    """Sends `action` while processing func command."""
+    """
+    Sends `action` while processing func command.
+    https://github.com/python-telegram-bot/python-telegram-bot/wiki/Code-snippets#send-action-while-handling-command-decorator
+    """
 
     def decorator(func):
         @wraps(func)

@@ -3,8 +3,11 @@ from telegram import ReplyKeyboardMarkup
 from howru_helpers.Flag import flag
 
 
-def get_custom_keyboard(values, max_column=2):
-    # row_size = len(options) / max_column
+def get_custom_keyboard(values):
+    """
+    Creates a custom keyboard with response values.
+    :param values (str)
+    """
     schema = [[value] for value in values]
     return ReplyKeyboardMarkup(schema)
 

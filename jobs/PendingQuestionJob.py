@@ -12,6 +12,9 @@ from howru_models.models import *
 
 
 def was_configurator_running(patient_id, context):
+    """
+    Returns wether the user had the configurator opened when questions were popped.
+    """
     all_hand = context.dispatcher.handlers
     for dict_group in all_hand:
         for handler in all_hand[dict_group]:
@@ -27,6 +30,9 @@ class PendingQuestionJob(object):
         self._create_job(context)
 
     def job_callback(self, context):
+        """
+        Prompts PendingQuestions to the user.
+        """
         pending_questions = self._get_pending_questions()
         for task in pending_questions:
             if not self.is_question_answered(task):
@@ -39,7 +45,7 @@ class PendingQuestionJob(object):
                     time.sleep(0.5)
         message = messages[self.patient.language]['finish_answering'] if self.answered_questions_today() else \
             messages[self.patient.language]['no_questions']
-        logger.info(f'User {self.patient.username} id {self.patient.identifier} answered all the questions')
+        logger.info(f'User {self.patient.username} answered all the questions')
         context.bot.send_message(chat_id=self.patient.identifier, text=message, reply_markup=ReplyKeyboardRemove())
         time.sleep(0.1)
         if was_configurator_running(self.patient.identifier, context):
@@ -55,6 +61,10 @@ class PendingQuestionJob(object):
 
     @staticmethod
     def is_question_answered(question_task):
+        """
+        Returns wether the user answered the question today.
+        :param question_task (PendingQuestion)
+        """
         now = datetime.now()
         today = datetime(now.year, now.month, now.day)
         tomorrow = today + timedelta(days=1)
@@ -80,9 +90,6 @@ class PendingQuestionJob(object):
                     last_answer_date = answered.answer_date
                     now = datetime.now()
                     today = datetime(now.year, now.month, now.day)
-                    logger.info("last answer day % today day %s", last_answer_date.day, today.day)
-                    logger.info("last answer weekday % today weekday %s", last_answer_date.weekday, today.weekday)
-                    logger.info("last answer month % today month %s", last_answer_date.month, today.month)
                     if pending_question.question.frequency == "D" and last_answer_date.day < today.day:
                         # Daily
                         pending_questions.append(pending_question)

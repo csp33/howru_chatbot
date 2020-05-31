@@ -13,6 +13,10 @@ ANSWERING, ANSWERED = range(2)
 
 @send_typing_action
 def answer_question(update, context):
+    """
+    Prompts user's question by querying PendingQuestion DB.
+    Creates an AsweredQuestion object.
+    """
     user = update.message.from_user
     response = update.message.text
     # Get question that is being answered from DB:
@@ -38,6 +42,9 @@ def answer_question(update, context):
 
 
 def _get_pending_question_task(user_id):
+    """
+    Obtains the question that the user is answering
+    """
     return PendingQuestion.objects.get(patient_id=user_id, answering=True)
 
 
