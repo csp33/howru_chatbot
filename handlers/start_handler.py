@@ -8,7 +8,7 @@ from log.logger import logger
 import keyboards
 import manage
 from django.contrib.auth.models import User
-from howru_models.models import Patient ,PendingQuestion
+from howru_models.models import Patient ,PendingQuestion, Doctor
 from howru_helpers import Flag
 
 GENDER, PICTURE, LANGUAGE, SCHEDULE = range(4)
@@ -116,23 +116,22 @@ def finish(update, context):
     """
     patient = context.user_data['patient']
     patient.save()
-    # Add data analyst to all patients and assigned_to_all questions
+    # Add patient to data analysts and assigned_to_all questions
     try:
-        data_analyst = User.objects.get(username="data_analyst").doctor
-        patient.assigned_doctors.add(data_analyst)
-        patient.save()
-        assigned_to_all = data_analyst.assigned_questions.filter(assigned_to_all=True)
-        for question in assigned_to_all:
-            pending_question = PendingQuestion(doctor=data_analyst,
-                                               question=question,
-                                               patient=patient,
-                                               answering=False)
-            pending_question.save()
-        logger.info("Patient %s assigned to data_analyst", patient.username)
-    except User.DoesNotExist:
-        logger.error("data_analyst doctor does not exists")
+        data_analysts = Doctor.objects.filter(is_analyst=True)
+        for doctor in data_analysts:
+            patient.assigned_doctors.add(doctor)
+            patient.save()
+            assigned_to_all = doctor.assigned_questions.filter(assigned_to_all=True)
+            for question in assigned_to_all:
+                pending_question = PendingQuestion(doctor=doctor,
+                                                   question=question,
+                                                   patient=patient,
+                                                   answering=False)
+                pending_question.save()
+        logger.info("Patient %s assigned to data_analysts", patient.username)
     except:
-        logger.exception("Exception adding patient %s to data_analyst.", patient.username)
+        logger.exception("Exception while adding patient %s to data_analysts.", patient.username)
     update.message.reply_text(messages[patient.language]['registration_ok'])
     logger.info(f'Creating pending_questions job for user {update.message.from_user.username}')
     PendingQuestionJob(context, patient)
