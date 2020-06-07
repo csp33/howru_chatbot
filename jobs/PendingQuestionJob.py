@@ -79,27 +79,26 @@ class PendingQuestionJob(object):
         """
         pending_questions = list()
         for pending_question in PendingQuestion.objects.filter(patient=self.patient).order_by("question__priority"):
-            answered_questions = AnsweredQuestion.objects.filter(question=pending_question.question,
-                                                                 patient=pending_question.patient)
-            if not answered_questions:
+            answered = AnsweredQuestion.objects.filter(question=pending_question.question,
+                                                       patient=pending_question.patient).order_by("-answer_date")
+            if not answered:
                 # If the question has never been answered, add it to the queue
                 pending_questions.append(pending_question)
             else:
-                for answered in answered_questions:
-                    # As only_once questions are only added in the first if, they won't be added again
-                    last_answer_date = answered.answer_date
-                    now = datetime.now()
-                    today = datetime(now.year, now.month, now.day)
-                    if pending_question.question.frequency == "D" and last_answer_date.day < today.day:
-                        # Daily
-                        pending_questions.append(pending_question)
-                    if pending_question.question.frequency == "W" and last_answer_date.weekday == today.weekday:
-                        # Weekly
-                        pending_questions.append(pending_question)
-                    elif pending_question.question.frequency == "M" and last_answer_date.month < today.month \
-                            and last_answer_date.day == today.day:
-                        # Monthly
-                        pending_questions.append(pending_question)
+                # As only_once questions are only added in the first if, they won't be added again
+                last_answer_date = answered[0].answer_date
+                now = datetime.now()
+                today = datetime(now.year, now.month, now.day)
+                if pending_question.question.frequency == "D" and last_answer_date.day < today.day:
+                    # Daily
+                    pending_questions.append(pending_question)
+                if pending_question.question.frequency == "W" and last_answer_date.weekday == today.weekday:
+                    # Weekly
+                    pending_questions.append(pending_question)
+                elif pending_question.question.frequency == "M" and last_answer_date.month < today.month \
+                        and last_answer_date.day == today.day:
+                    # Monthly
+                    pending_questions.append(pending_question)
         return pending_questions
 
     @staticmethod

@@ -27,7 +27,7 @@ def start(update, context):
         update.message.reply_text(text=messages[patient.language]['already_exists'])
         return ConversationHandler.END
     except Patient.DoesNotExist:
-        # If the user should not exist in DB
+        # The user should not exist in DB
         context.user_data['patient'] = Patient(name=update.message.from_user.first_name,
                                                identifier=str(update.message.from_user.id),
                                                username=update.message.from_user.username)
