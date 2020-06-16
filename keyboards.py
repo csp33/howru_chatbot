@@ -8,7 +8,7 @@ def get_custom_keyboard(values):
     Creates a custom keyboard with response values.
     :param values (str)
     """
-    schema = [[value] for value in values]
+    schema = [[str(value)] for value in values]
     return ReplyKeyboardMarkup(schema)
 
 

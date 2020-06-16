@@ -4,11 +4,10 @@ from datetime import datetime, timedelta
 from telegram import ReplyKeyboardRemove
 from telegram.ext import ConversationHandler
 
-from config.messages import messages
-from log.logger import logger
-import manage
 import keyboards
+from config.messages import messages
 from howru_models.models import *
+from log.logger import logger
 
 
 def was_configurator_running(patient_id, context):
@@ -40,7 +39,7 @@ class PendingQuestionJob(object):
                 task.answering = True
                 task.save()
                 context.bot.send_message(chat_id=self.patient.identifier, text=question.text,
-                                         reply_markup=keyboards.get_custom_keyboard(question.responses))
+                                         reply_markup=keyboards.get_custom_keyboard(question.response_set.all()))
                 while not self.is_question_answered(task):
                     time.sleep(0.5)
         message = messages[self.patient.language]['finish_answering'] if self.answered_questions_today() else \
