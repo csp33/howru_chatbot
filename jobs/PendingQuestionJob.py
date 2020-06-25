@@ -6,6 +6,7 @@ from telegram.ext import ConversationHandler
 
 import keyboards
 from config.messages import messages
+import manage
 from howru_models.models import *
 from log.logger import logger
 

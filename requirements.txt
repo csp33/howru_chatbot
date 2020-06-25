@@ -2,6 +2,6 @@ python-telegram-bot
 ujson
 pytz
 django
-psycopg2
+psycopg2-binary
 Pillow
 django_better_admin_arrayfield

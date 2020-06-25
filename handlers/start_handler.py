@@ -3,10 +3,10 @@ from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Fi
 
 from config.messages import messages
 from handlers import send_typing_action
-from jobs.PendingQuestionJob import PendingQuestionJob
 from log.logger import logger
 import keyboards
 import manage
+from jobs.PendingQuestionJob import PendingQuestionJob
 from django.contrib.auth.models import User
 from howru_models.models import Patient ,PendingQuestion, Doctor
 from howru_helpers import Flag
