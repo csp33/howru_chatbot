@@ -1,0 +1,14 @@
+[Unit]
+Description=HOW-R-U Conversational agent
+After=network.target postgreql.service
+StartLimitIntervalSec=0
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=root
+Environment=PYTHONPATH=/opt/howru/chatbot/ DJANGO_SETTINGS_MODULE="manage.settings"
+ExecStart=/opt/howru/chatbot/venv/bin/python /opt/howru/chatbot/src/bot.py
+
+[Install]
+WantedBy=multi-user.target
