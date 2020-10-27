@@ -75,7 +75,7 @@ def picture(update, context):
     """
     patient = context.user_data['patient']
     photo_file = update.message.photo[-1].get_file()
-    pic_name = f'/opt/howru/chatbot/pics/{update.message.from_user.id}.jpg'
+    pic_name = f'pics/{update.message.from_user.id}..jpg'
     photo_file.download(pic_name)
     logger.info(f'User {update.message.from_user.username} sent picture {pic_name}')
     update.message.reply_text(messages[patient.language]['choose_schedule'])
@@ -91,7 +91,7 @@ def skip_picture(update, context):
     patient = context.user_data['patient']
     logger.info(
         f'User {update.message.from_user.username} did not send a picture, using default')
-    patient.picture = '/opt/howru/chatbot/pics/default_profile_picture.png'
+    patient.picture = f'pics/default_profile_picture.png'
     update.message.reply_text(messages[patient.language]['choose_schedule'])
     return SCHEDULE
 

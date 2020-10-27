@@ -71,7 +71,7 @@ def process_profile_pic(update, context):
     """
     patient = context.user_data['patient']
     photo_file = update.message.photo[-1].get_file()
-    pic_name = f'/opt/howru/chatbot/pics/{update.message.from_user.id}.jpg'
+    pic_name = f'pics/{update.message.from_user.id}.jpg'
     photo_file.download(pic_name)
     patient.picture = pic_name
     patient.save()
