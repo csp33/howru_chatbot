@@ -1,12 +1,20 @@
 from functools import wraps
-
+import traceback
 from telegram import ChatAction
 
 from log.logger import logger
-
+from config.bot_config import ADMINS_CHAT_IDS
 
 def error_callback(update, context):
-    logger.exception(f'Error {context.error} while performing update on user {update.message.from_user.username}')
+    e = context.error
+    try:
+        user = update.message.from_user.username
+    except Exception:
+        user = ""
+    for admin_id in ADMINS_CHAT_IDS:
+        context.bot.send_message(chat_id=admin_id, text=f'Exception {str(e)} when performing update on user {user}')
+        context.bot.send_message(chat_id=admin_id, text=''.join(traceback.format_tb(e.__traceback__)))
+    logger.exception(f'Error {e} while performing update on user {user}')
 
 
 def send_action(action):
