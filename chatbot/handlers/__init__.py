@@ -2,8 +2,8 @@ from functools import wraps
 import traceback
 from telegram import ChatAction
 
-from log.logger import logger
-from config.bot_config import ADMINS_CHAT_IDS
+from chatbot.log.logger import logger
+from chatbot.config.bot_config import ADMINS_CHAT_IDS
 
 def error_callback(update, context):
     e = context.error

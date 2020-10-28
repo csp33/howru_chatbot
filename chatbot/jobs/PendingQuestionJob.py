@@ -4,11 +4,11 @@ from datetime import datetime, timedelta
 from telegram import ReplyKeyboardRemove
 from telegram.ext import ConversationHandler
 
-import keyboards
-from config.messages import messages
+import chatbot.keyboards as keyboards
+from chatbot.config.messages import messages
 import manage
 from howru_models.models import *
-from log.logger import logger
+from chatbot.log.logger import logger
 
 
 def was_configurator_running(patient_id, context):
