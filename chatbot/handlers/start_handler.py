@@ -1,12 +1,12 @@
 from telegram import ReplyKeyboardRemove
 from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters
 
-from config.messages import messages
-from handlers import send_typing_action
-from log.logger import logger
-import keyboards
+from chatbot.config.messages import messages
+from chatbot.handlers import send_typing_action
+from chatbot.log.logger import logger
+import chatbot.keyboards as keyboards
 import manage
-from jobs.PendingQuestionJob import PendingQuestionJob
+from chatbot.jobs.PendingQuestionJob import PendingQuestionJob
 from django.contrib.auth.models import User
 from howru_models.models import Patient ,PendingQuestion, Doctor
 from howru_helpers import Flag
@@ -75,7 +75,7 @@ def picture(update, context):
     """
     patient = context.user_data['patient']
     photo_file = update.message.photo[-1].get_file()
-    pic_name = f'/opt/chatbot/pics/{update.message.from_user.id}.jpg'
+    pic_name = f'/opt/chatbot/chatbot/pics/{update.message.from_user.id}.jpg'
     photo_file.download(pic_name)
     logger.info(f'User {update.message.from_user.username} sent picture {pic_name}')
     update.message.reply_text(messages[patient.language]['choose_schedule'])
@@ -91,7 +91,7 @@ def skip_picture(update, context):
     patient = context.user_data['patient']
     logger.info(
         f'User {update.message.from_user.username} did not send a picture, using default')
-    patient.picture = '/opt/chatbot/pics/default_profile_picture.png'
+    patient.picture = '/opt/chatbot/chatbot/pics/default_profile_picture.png'
     update.message.reply_text(messages[patient.language]['choose_schedule'])
     return SCHEDULE
 

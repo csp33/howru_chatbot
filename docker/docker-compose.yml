@@ -1,0 +1,42 @@
+version: "3.1"
+services:
+  psychologist-bot:
+    image: psychologist-bot
+    links:
+        - db:db
+    volumes:
+        - ../:/opt/chatbot
+    depends_on:
+      - db
+    restart: always
+  db:
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    restart: always
+  web-interface:
+    image: web_interface
+    links:
+        - db:db
+    volumes:
+      - ~/Documents/how-r-u/web_interface:/opt/web_interface
+    ports:
+      - "8080:8080"
+    depends_on:
+      - proxy
+      - db
+    restart: always
+
+  proxy:
+    image: proxy
+    ports:
+      - "85:85"
+    volumes:
+      - ./proxy:/etc/nginx/conf.d
+    restart: always
+
+
