@@ -3,10 +3,10 @@ from datetime import datetime
 from telegram import ReplyKeyboardRemove
 from telegram.ext import ConversationHandler, MessageHandler, Filters
 
-from filters.IsAnsweringFilter import is_answering_filter
-from handlers import send_typing_action
+from chatbot.filters.IsAnsweringFilter import is_answering_filter
+from chatbot.handlers import send_typing_action
 from howru_models.models import AnsweredQuestion, PendingQuestion
-from log.logger import logger
+from chatbot.log.logger import logger
 import pytz
 
 
