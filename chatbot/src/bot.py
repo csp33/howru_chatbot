@@ -1,11 +1,11 @@
-from handlers import error_callback
-from log.logger import logger
+from chatbot.handlers import error_callback
+from chatbot.log.logger import logger
 from telegram.ext import Updater
 
-from config import bot_config
-from handlers.start_handler import start_handler
-from handlers.config_handler import config_handler
-from handlers.question_handler import question_handler
+from chatbot.config import bot_config
+from chatbot.handlers.start_handler import start_handler
+from chatbot.handlers.config_handler import config_handler
+from chatbot.handlers.question_handler import question_handler
 
 
 def main():

@@ -1,7 +1,7 @@
 from telegram.ext.filters import InvertedFilter, MergedFilter
 import manage
 from howru_models.models import Patient
-from log.logger import logger
+from chatbot.log.logger import logger
 
 
 class IsAnsweringFilter:

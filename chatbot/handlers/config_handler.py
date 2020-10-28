@@ -5,13 +5,13 @@ from datetime import datetime
 from telegram import ReplyKeyboardRemove, ParseMode
 from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters, run_async
 
-from config.messages import messages
-from filters.IsAnsweringFilter import is_answering_filter
-from handlers import send_typing_action, send_upload_photo_action
+from chatbot.config.messages import messages
+from chatbot.filters.IsAnsweringFilter import is_answering_filter
+from chatbot.handlers import send_typing_action, send_upload_photo_action
 from howru_helpers import UTCTime, Flag
-from jobs.PendingQuestionJob import PendingQuestionJob
-from log.logger import logger
-import keyboards
+from chatbot.jobs.PendingQuestionJob import PendingQuestionJob
+from chatbot.log.logger import logger
+import chatbot.keyboards as keyboards
 import manage
 from howru_models.models import Patient
 
@@ -71,7 +71,7 @@ def process_profile_pic(update, context):
     """
     patient = context.user_data['patient']
     photo_file = update.message.photo[-1].get_file()
-    pic_name = f'/opt/howru/chatbot/pics/{update.message.from_user.id}.jpg'
+    pic_name = f'/opt/chatbot/chatbot/pics/{update.message.from_user.id}.jpg'
     photo_file.download(pic_name)
     patient.picture = pic_name
     patient.save()
